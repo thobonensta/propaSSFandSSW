@@ -5,8 +5,11 @@ import math
 from utilsSpace.ground import calculatedTwavenumber,FresnelCoeff, addImageField
 from utilslSSW.transformFWT import compressedFWT
 from scipy.signal import convolve
+from tqdm import tqdm
+from utilsRelief.shiftRelief import shift_relief_propa, shift_relief_postpropa
 
-def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,polar,condG,family,level,Vs,Vp):
+
+def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,zt,polar,condG,family,level,Vs,Vp):
 
 
     usave = np.zeros((Nx,Nz),dtype='complex')
@@ -20,8 +23,10 @@ def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,polar,condG,family,lev
 
     ux = u0
 
+    shiftT = np.diff(zt)
 
-    for ix in range(1,Nx):
+
+    for ix in tqdm(range(1,Nx)):
         xpos = ix * dx + x0
         thetaI = math.atan(xpos / zs)
         kiz, ktz = calculatedTwavenumber(k0, epsr1, epsr2, thetaI)
@@ -32,6 +37,9 @@ def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,polar,condG,family,lev
             R = FresnelCoeff(epsr1, epsr2, kiz, ktz, polar)
             ux = addImageField(ux, Nim, R)
 
+        if shiftT[ix - 1] < 0: # Descending stair
+            ux = shift_relief_propa(ux, shiftT[ix - 1])
+
         Ux = compressedFWT(ux,family,level,Vs)
 
         UxdxFS = propaWOneStep(Ux,locP,family,level,len(ux),nbrT)
@@ -41,12 +49,19 @@ def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,polar,condG,family,lev
         if condG == 'PEC' or condG == 'Dielectric':
             uxdxFS = uxdxFS[Nim:]
 
+        if shiftT[ix - 1]> 0: # Ascending stair
+            uxdxFS = shift_relief_propa(uxdxFS, shiftT[ix - 1])
+
         ux = A * L * uxdxFS
 
         if condG == 'PEC' or condG == 'Dielectric':
             usave[ix, :] = ux[:-Napo]
         else:
             usave[ix, :] = ux[Napo:-Napo]
+
+        # shift back to the physical domain
+        tr = zt[ix]
+        usave[ix, :] = shift_relief_postpropa(usave[ix, :], tr)
 
     return usave
 
