@@ -5,23 +5,31 @@ from utilsSSF.propaFreeSpace import propa_FS_widediscrete
 from utilsSSF.transform import FFT, IFFT
 from utilslSSW.transformFWT import compressedFWT
 def localPropagators(dx,dz,family,level,k0,Vp):
-    lst_wavelets = waveletEachLevel(dx,dz,family,level)
+    ''' function that computes the local propagators and save them in an array
+    For each level, we obtain the free-space propagated wavelet coefficients
+    using SSF. This allows for calculating the scattering operator for the wavelet
+    even if they do not have an analytical formula.
+    '''
+    lst_wavelets = waveletEachLevel(dx,dz,family,level) # obtain a wavelet of each level
 
-    locP = initLocPropa(level)
+    locP = initLocPropa(level) # Init the array for the local propagators
 
-    nbT = nbrTranslations(level)
+    nbT = nbrTranslations(level) # Due to dilations we need to translate some propagated wavelets
 
     for il in range(level+1):
         Tl = nbT[il]
         uw = lst_wavelets[il]
         Nsupp = len(uw)
+        # propagation in free-space
         P = propa_FS_widediscrete(k0,dx,dz,Nsupp)
         Uw = FFT(uw)
         Uwdx = P*Uw
         uwdx = IFFT(Uwdx)
         for it in range(Tl):
+            # roll (translate) if necessary due to dilations
             t = it*(2**(level+1-il))
             uwdxt = np.roll(uwdx,t)
+            # come back in the wavelet domain to save the wavelet coefficients
             ptmp = compressedFWT(uwdxt,family,level,Vp*np.max(np.abs(uwdxt)))
             locP[il][it] = ptmp
     return locP
@@ -30,6 +38,7 @@ def localPropagators(dx,dz,family,level,k0,Vp):
 
 
 def waveletEachLevel(dx,dz,family,level):
+    ''' function that computes one wavelet for each level in the physical domain '''
 
     lst_wavelets = [[] for _ in range(level+1)]
 
@@ -42,6 +51,7 @@ def waveletEachLevel(dx,dz,family,level):
     return lst_wavelets
 
 def createWavelet(ns,family,il,level):
+    ''' Create a wavelet of any level in the physical space'''
     u = np.zeros(ns+ns,dtype='complex')
     U = pywt.wavedec(u,family,'per',level)
     if il == 0:
@@ -53,6 +63,7 @@ def createWavelet(ns,family,il,level):
     return uw
 
 def waveletsize(il,level):
+    ''' Support size of the wavelet -- sym6'''
     n = 7
     l = il
     if il == 0:
@@ -61,6 +72,7 @@ def waveletsize(il,level):
     return n
 
 def increaseWSizePropaWA(n,dx,dz,level):
+    ''' function that compute the wavelet support size after propagation'''
     nadd = int(np.ceil(dx*np.sin(np.pi/2)/dz))
     n = n + nadd
     rem = n%(2**level)
@@ -69,6 +81,7 @@ def increaseWSizePropaWA(n,dx,dz,level):
     return n
 
 def nbrTranslations(level):
+    ''' function that computes the number of translations for each level '''
     nbT = np.zeros(level+1,dtype=int)
     for il in range(level+1):
         level = il
@@ -79,6 +92,7 @@ def nbrTranslations(level):
     return nbT
 
 def initLocPropa(level):
+    ''' function that create an empty array of good size to save the local propagators'''
     nbT = nbrTranslations(level)
     LocP = [[] for _ in range(level+1)]
     for il in range(level+1):

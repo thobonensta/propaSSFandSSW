@@ -3,6 +3,7 @@ import numpy as np
 from utilsSource.ComplexSourcePoint import CSP
 
 def compressedFWT(u,family,level,Vs):
+    ''' function that performs the FWT and compression with hard-threshold Vs'''
     U = pywt.wavedec(u,family,'per',level)
     U,slice = pywt.coeffs_to_array(U)
     U = pywt.threshold(U,Vs,mode='hard')

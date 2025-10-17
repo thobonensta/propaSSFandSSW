@@ -1,5 +1,6 @@
 import numpy as np
 def linearRefractivity(Nz,M0,c0,dz):
+    ''' model for a linear refractivity'''
     M_index = np.zeros(Nz)
     for jj_z in range(0,Nz):
     # Refractivity is expressed in M-units
@@ -7,6 +8,7 @@ def linearRefractivity(Nz,M0,c0,dz):
     return 1.0 + M_index * 1e-6
 
 def trilinearRefractivity(dz,Nz,zb,zt,zmax,M0,c0,c1,c2):
+    ''' model for a tri-linear refractivity'''
     config_alt = [0, zb, zb + zt, zmax]
     Mb = M0 + zb * c0
     Mt = Mb + zt * c1

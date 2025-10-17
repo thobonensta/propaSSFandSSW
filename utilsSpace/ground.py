@@ -1,6 +1,7 @@
 import numpy as np
 
 def calculatedTwavenumber(k0,epsr1,epsr2,thetaI):
+    ''' function that computes the reflected and transmitted wave number at the ground'''
     k0 = k0*np.sqrt(epsr1)
     ksol = k0*np.sqrt(epsr2)
     kiz = -k0*np.cos(thetaI)
@@ -11,6 +12,7 @@ def calculatedTwavenumber(k0,epsr1,epsr2,thetaI):
     return kiz,ktz
 
 def FresnelCoeff(epsr1,epsr2,kiz,ktz,polar):
+    ''' function that compute the Fresnel coefficient at the ground'''
     if polar == 'TM':
         R = (epsr2*kiz-epsr1*ktz)/(epsr2*kiz+epsr1*ktz)
     elif polar == 'TE':
@@ -18,6 +20,7 @@ def FresnelCoeff(epsr1,epsr2,kiz,ktz,polar):
     return R
 
 def addImageField(u,Nim,R):
+    ''' function that add the image field -- image theorem'''
     Nz = len(u)
     uim = np.zeros(Nim+Nz,dtype='complex')
     uim[Nim:] = u

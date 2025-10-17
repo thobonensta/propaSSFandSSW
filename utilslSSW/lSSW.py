@@ -10,24 +10,31 @@ from utilsRelief.shiftRelief import shift_relief_propa, shift_relief_postpropa
 
 
 def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,zt,polar,condG,family,level,Vs,Vp):
+    ''' function that performs the local SSW algorithm
+    We solve the PWE iteratively (as an ODE) using SSW (local version)
+    '''
 
-
+    # define an array of zero to store each iteration over x
     usave = np.zeros((Nx,Nz),dtype='complex')
     if condG == 'PEC' or condG =='Dielectric':
         usave[0,:] = u0[:-Napo]
     else:
         usave[0,:] = u0[Napo:-Napo]
 
+    # Compute the local operators associated to the wavelet
     locP =  localPropagators(dx,dz,family,level,k0,Vp)
+    # Translations needed for each level depending on dilations
     nbrT = nbrTranslations(level)
 
     ux = u0
 
+    # Shift from one step to another needed for the terrain
     shiftT = np.diff(zt)
 
 
     for ix in tqdm(range(1,Nx)):
         xpos = ix * dx + x0
+        # Compute the Fresnel coefficient for the ground
         thetaI = math.atan(xpos / zs)
         kiz, ktz = calculatedTwavenumber(k0, epsr1, epsr2, thetaI)
         if condG == 'PEC':
@@ -37,21 +44,26 @@ def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,zt,polar,condG,family,
             R = FresnelCoeff(epsr1, epsr2, kiz, ktz, polar)
             ux = addImageField(ux, Nim, R)
 
+        # If descending relief -> zero bottom
         if shiftT[ix - 1] < 0: # Descending stair
             ux = shift_relief_propa(ux, shiftT[ix - 1])
 
+        # Pass in the wavelet domain
         Ux = compressedFWT(ux,family,level,Vs)
-
+        # Propagate in the wavelet domain
         UxdxFS = propaWOneStep(Ux,locP,family,level,len(ux),nbrT)
-
+        # Come back in the space domain
         uxdxFS = pywt.waverec(UxdxFS,family,'per')
 
+        # Pop the image field
         if condG == 'PEC' or condG == 'Dielectric':
             uxdxFS = uxdxFS[Nim:]
 
+        # If ascending relief -> zero up
         if shiftT[ix - 1]> 0: # Ascending stair
             uxdxFS = shift_relief_propa(uxdxFS, shiftT[ix - 1])
 
+        # Refraction and apodisation in the spatial domain
         ux = A * L * uxdxFS
 
         if condG == 'PEC' or condG == 'Dielectric':
@@ -67,6 +79,11 @@ def lSSW(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,dz,Nz,Nim,Napo,L,A,zt,polar,condG,family,
 
 
 def propaWOneStep(Ux,locP,family,level,Nz,nbrT):
+    ''' function that computes one step of propagation in the wavelet domain
+    This is done by convoluting the local operators over the non-zero wavelet
+    coefficients. One need to choose the right operators depending on the level
+    and the dilations.
+    '''
     # --- Initialization ---
     tmpZ = np.zeros(Nz, dtype=complex)
     Uxdx = pywt.wavedec(tmpZ, family, 'per', level)

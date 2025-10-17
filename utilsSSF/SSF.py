@@ -6,7 +6,10 @@ from tqdm import tqdm
 from utilsRelief.shiftRelief import shift_relief_propa, shift_relief_postpropa
 
 def waDSSF(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,Nz,Nim,Napo,P,L,A,zt,polar,condG):
+    ''' function that performs the DSSF (wide-angle) method to solve the PWE
+    '''
 
+    # define an array of zero to store each iteration over x
     usave = np.zeros((Nx,Nz),dtype='complex')
     if condG == 'PEC' or condG =='Dielectric':
         usave[0,:] = u0[:-Napo]
@@ -15,11 +18,13 @@ def waDSSF(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,Nz,Nim,Napo,P,L,A,zt,polar,condG):
 
     ux = u0
 
+    # Shift from one step to another needed for the terrain
     shiftT = np.diff(zt)
 
 
     for ix in tqdm(range(1,Nx)):
         xpos = ix*dx + x0
+        # Compute the Fresnel coefficient for the ground
         thetaI = math.atan(xpos/zs)
         kiz,ktz = calculatedTwavenumber(k0,epsr1,epsr2,thetaI)
         if condG == 'PEC':
@@ -29,20 +34,25 @@ def waDSSF(u0,x0,zs,k0,epsr1,epsr2,dx,Nx,Nz,Nim,Napo,P,L,A,zt,polar,condG):
             R = FresnelCoeff(epsr1,epsr2,kiz,ktz,polar)
             ux = addImageField(ux, Nim, R)
 
+        # If descending relief -> zero bottom
         if shiftT[ix - 1] < 0: # Descending stair
             ux = shift_relief_propa(ux, shiftT[ix - 1])
 
-
+        # Go in the spectral domain to propagate in a free-space layer
         Ux = FFT(ux)
+        # One step of propagation in the spectral domain
         Uxdx = P*Ux
+        # Go back in the spatial domain
         uxdxFS = IFFT(Uxdx)
 
+        # pop the image field in the ground
         if condG == 'PEC' or condG=='Dielectric':
             uxdxFS = uxdxFS[Nim:]
 
         if shiftT[ix - 1]> 0: # Ascending stair
             uxdxFS = shift_relief_propa(uxdxFS, shiftT[ix - 1])
 
+        # account for refraction and apodisation in the spatial domain
         ux = A*L*uxdxFS
 
         if condG == 'PEC' or condG == 'Dielectric':
