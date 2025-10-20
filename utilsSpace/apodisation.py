@@ -15,3 +15,23 @@ def HanningWindowUpDown(zmax,dz,Nz,Napo):
     A[-Napo:] = window
     A[:Napo] = window[::-1]
     return A
+
+def PMLEdgesUpDown(dz,Nz, Npad, slope=0.8):
+    ''' function that performs apodisation using a PML strategy UP
+    based on a first order approximation at the top boundary of Sommerfeld condition
+    '''
+    alpha = np.zeros(Npad+Nz+Npad)
+    alpha[:Npad] = slope*((Npad - np.arange(Npad))/Npad)**2
+    alpha[-Npad:] = slope*((np.arange(Npad)+1)/Npad)**2
+    A = np.exp(-alpha * dz)
+    return A
+
+def PMLEdgesUp(dz,Nz, Npad, slope=0.8):
+    ''' function that performs apodisation using a PML strategy Up and Down
+    based on a first order approximation at the top and bottom boundary of Sommerfeld condition
+    '''
+
+    alpha = np.zeros(Nz+Npad)
+    alpha[-Npad:] = slope*((np.arange(Npad)+1)/Npad)**2
+    A = np.exp(-alpha * dz)
+    return A

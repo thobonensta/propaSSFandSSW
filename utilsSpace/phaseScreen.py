@@ -4,3 +4,13 @@ def phasescreenwide(dx,n,k0):
     L = np.exp(-1j*k0*(n-1)*dx)
     return L
 
+def phasescreenwide(dx,n,k0):
+    ''' Compute the phase screen for the wide angle PWE '''
+    L = np.exp(-1j*k0*(n-1)*dx)
+    return L
+
+def phasescreennarrow(dx,n,k0):
+    ''' Compute the phase screen for the wide angle PWE '''
+    L = np.exp(-1j*k0*(n**2-1)/2*dx)
+    return L
+

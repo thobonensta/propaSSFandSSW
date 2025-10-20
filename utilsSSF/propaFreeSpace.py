@@ -14,6 +14,28 @@ def propa_FS_widediscrete(k0,dx,dz,Nz):
     P = np.exp(-1j*dx*(kx-k0))
     return P
 
+def propa_FS_wide(k0,dx,dz,Nz):
+    ''' function that define the usual continuous wide-angle free-space propagator
+    Direct diagoalization in the continuous domain and then discretized
+    '''
+    kx = np.zeros(Nz,dtype='complex')
+    kz = np.fft.fftfreq(Nz, dz)*2*np.pi
+    kx2 = k0 ** 2 - kz ** 2
+    kx[kx2 >= 0] = np.sqrt(kx2[kx2 >= 0])
+    kx[kx2 < 0] = -1j * np.sqrt(kx2[kx2 < 0])
+    # DSSF propagator
+    P = np.exp(-1j * dx * (kx - k0))
+    return P
+
+def propa_FS_narrow(k0,dx,dz,Nz):
+    ''' function that define the usual continuous wide-angle free-space propagator
+    Direct diagoalization in the continuous domain and then discretized
+    '''
+    kz = np.fft.fftfreq(Nz, dz) * 2*np.pi
+    # DSSF propagator
+    P = np.exp(1j * dx * (kz**2/(2*k0)))
+    return P
+
 if __name__ == '__main__':
     from utilsSource.ComplexSourcePoint import CSP
     from utilsSSF.transform import FFT, IFFT
