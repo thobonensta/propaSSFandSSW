@@ -6,17 +6,17 @@ counterpart of SSF (narrow-angle and wide-angle) for comparison.
 
 # Git command
 To clone the repository in order to have a branch to date and be able to modify the command in terminal is
->>> git clone https://github.com/thobonensta/propaSSFandSSW.git
+> git clone https://github.com/thobonensta/propaSSFandSSW.git
 
 This will create the associated repository in the file you are. Then you can modify everything and when you
 want you can add, commit and push. If you create a new file, you have to
->>> git add filename
+> git add filename
 
 If you modify or add or remove you will then have to
->>> git commit -m "what did you do"
+> git commit -m "what did you do"
 
 After that you can push the modifications
->>> git push -a
+> git push 
 
 If you are using PyCharmPro it can be done directlt through the interface of PyCharm.
 

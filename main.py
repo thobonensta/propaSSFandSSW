@@ -9,7 +9,17 @@ import numpy as np
 from utilsRelief.staircazeModel import model_relief
 import time
 import matplotlib
-matplotlib.use('MACOSX')
+
+# Try interactive backends first, then fall back to Agg
+for backend in ['Qt5Agg', 'TkAgg', 'MacOSX', 'Agg']:
+    try:
+        matplotlib.use(backend, force=True)
+        import matplotlib.pyplot as plt
+        print(f"Using backend: {matplotlib.get_backend()}")
+        break
+    except Exception as e:
+        print(f"Failed to use backend {backend}: {e}")
+
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
